@@ -33,6 +33,20 @@ services:
     volumes:
       - ./loki/config:/etc/loki
 
+  dbupdate:
+    restart: on-failure
+    image: streetcodeua/dbupdate:${DOCKER_TAG_DBUPDATE}
+    container_name: dbupdate
+    pull_policy: always
+    environment:
+      STREETCODE_ConnectionStrings__DefaultConnection: ${DB_CONNECTION_STRING}
+    networks:
+      - backend
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+
   frontend:
     restart: always
     image: streetcodeua/streetcode_client:${DOCKER_TAG_FRONTEND}
@@ -62,6 +76,8 @@ services:
     pull_policy: always
     expose:
       - "80"
+    depends_on:
+      - dbupdate
     environment:
       STREETCODE_ConnectionStrings__DefaultConnection: ${DB_CONNECTION_STRING}
       STREETCODE_Blob__BlobStoreKey: ${BLOB_STORAGE_KEY}
@@ -102,3 +118,4 @@ networks:
   frontend:
     external:
       name: frontend
+
